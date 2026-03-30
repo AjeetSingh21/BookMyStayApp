@@ -9,7 +9,6 @@ public class app {
         }
     }
 
-    // Reservation Model
     static class Reservation {
         private String guestName;
         private String roomType;
@@ -53,7 +52,6 @@ public class app {
             }
         }
 
-        // Helper to calculate booked count
         private int getBookedCount(String type) {
             int total;
             switch (type) {
