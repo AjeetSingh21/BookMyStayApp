@@ -28,7 +28,6 @@ public class app {
         }
     }
 
-    // Thread-safe Booking Service
     static class BookingService {
 
         private Map<String, Integer> inventory = new HashMap<>();
@@ -38,8 +37,6 @@ public class app {
             inventory.put("Double", 3);
             inventory.put("Suite", 2);
         }
-
-        // synchronized ensures thread safety
         public synchronized void bookRoom(Reservation reservation) {
             String type = reservation.getRoomType();
 
