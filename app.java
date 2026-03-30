@@ -3,15 +3,13 @@ import java.util.*;
 
 public class app {
     public static void main(String[] args) {
-        class Reservation implements Serializable {
+        class Reservation {
             private String reservationId;
             private String guestName;
             private String roomType;
 
-            public Reservation(String reservationId, String guestName, String roomType) {
-                this.reservationId = reservationId;
-                this.guestName = guestName;
-                this.roomType = roomType;
+            public String getRoomType() {
+                return roomType;
             }
 
             public String getReservationId() {
@@ -27,91 +25,101 @@ public class app {
                 return "Reservation{id=" + reservationId + ", guest=" + guestName + ", roomType=" + roomType + "}";
             }
         }
+        public synchronized void bookRoom(Reservation reservation) {
+            String type = reservation.getRoomType();
 
-        class SystemState implements Serializable {
-            private Map<String, Integer> inventory;
-            private List<Reservation> bookingHistory;
+        class BookingHistory {
+            private Map<String, Reservation> confirmedBookings = new HashMap<>();
 
-            public SystemState(Map<String, Integer> inventory, List<Reservation> bookingHistory) {
-                this.inventory = inventory;
-                this.bookingHistory = bookingHistory;
+            public void addReservation(Reservation reservation) {
+                confirmedBookings.put(reservation.getReservationId(), reservation);
+                System.out.println("Confirmed: " + reservation);
             }
 
-            public Map<String, Integer> getInventory() {
-                return inventory;
+            public Reservation getReservation(String reservationId) {
+                return confirmedBookings.get(reservationId);
             }
 
-            public List<Reservation> getBookingHistory() {
-                return bookingHistory;
+            public void removeReservation(String reservationId) {
+                confirmedBookings.remove(reservationId);
+            }
+
+            public void printHistory() {
+                System.out.println("\n--- Booking History ---");
+                for (Reservation r : confirmedBookings.values()) {
+                    System.out.println(r);
+                }
+                System.out.println("-----------------------");
             }
         }
 
-        class PersistenceService {
-            private String filename = "system_state.ser";
+        class CancellationService {
+            private Map<String, Integer> inventory = new HashMap<>();
+            private Stack<String> rollbackStack = new Stack<>();
+            private BookingHistory history;
 
-            public void saveState(SystemState state) {
-                try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename))) {
-                    out.writeObject(state);
-                    System.out.println("System state saved successfully.");
-                } catch (IOException e) {
-                    System.out.println("Error saving state: " + e.getMessage());
+            public CancellationService(BookingHistory history) {
+                this.history = history;
+                inventory.put("Deluxe", 2);
+                inventory.put("Suite", 1);
+                inventory.put("Standard", 3);
+            }
+        }
+
+            public void confirmReservation(Reservation reservation) {
+                String roomType = reservation.getRoomType();
+                if (inventory.get(roomType) != null && inventory.get(roomType) > 0) {
+                    inventory.put(roomType, inventory.get(roomType) - 1);
+                    history.addReservation(reservation);
+                    rollbackStack.push(reservation.getReservationId());
+                } else {
+                    System.out.println("No rooms available for type: " + roomType);
                 }
             }
 
-            public SystemState loadState() {
-                try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filename))) {
-                    SystemState state = (SystemState) in.readObject();
-                    System.out.println("System state loaded successfully.");
-                    return state;
-                } catch (IOException | ClassNotFoundException e) {
-                    System.out.println("No previous state found. Starting fresh.");
-                    return null;
+            public void cancelReservation(String reservationId) {
+                Reservation reservation = history.getReservation(reservationId);
+                if (reservation == null) {
+                    System.out.println("Cancellation failed: Reservation not found or already cancelled.");
+                    return;
                 }
+                String roomType = reservation.getRoomType();
+                inventory.put(roomType, inventory.get(roomType) + 1);
+                history.removeReservation(reservationId);
+                rollbackStack.push(reservationId);
+                System.out.println("Cancelled reservation: " + reservation);
+                System.out.println("Inventory rolled back for room type: " + roomType);
+            }
+            return total - inventory.get(type);
+        }
+
+            public void printInventory() {
+                System.out.println("\n--- Current Inventory ---");
+                for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+                    System.out.println(entry.getKey() + ": " + entry.getValue());
+                }
+                System.out.println("-------------------------");
             }
         }
 
-        PersistenceService persistence = new PersistenceService();
-        SystemState loadedState = persistence.loadState();
-
-        Map<String, Integer> inventory;
-        List<Reservation> bookingHistory;
-
-        if (loadedState != null) {
-            inventory = loadedState.getInventory();
-            bookingHistory = loadedState.getBookingHistory();
-        } else {
-            inventory = new HashMap<>();
-            inventory.put("Deluxe", 2);
-            inventory.put("Suite", 1);
-            inventory.put("Standard", 3);
-            bookingHistory = new ArrayList<>();
-        }
+        BookingHistory history = new BookingHistory();
+        CancellationService service = new CancellationService(history);
 
         Reservation r1 = new Reservation("R001", "Alice", "Deluxe");
         Reservation r2 = new Reservation("R002", "Bob", "Suite");
+        Reservation r3 = new Reservation("R003", "Charlie", "Standard");
 
-        if (inventory.get(r1.getRoomType()) > 0) {
-            inventory.put(r1.getRoomType(), inventory.get(r1.getRoomType()) - 1);
-            bookingHistory.add(r1);
-            System.out.println("Confirmed: " + r1);
-        }
+        service.confirmReservation(r1);
+        service.confirmReservation(r2);
+        service.confirmReservation(r3);
 
-        if (inventory.get(r2.getRoomType()) > 0) {
-            inventory.put(r2.getRoomType(), inventory.get(r2.getRoomType()) - 1);
-            bookingHistory.add(r2);
-            System.out.println("Confirmed: " + r2);
-        }
+        history.printHistory();
+        service.printInventory();
 
-        System.out.println("\n--- Current Inventory ---");
-        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
+        service.cancelReservation("R002");
+        service.cancelReservation("R004"); // invalid cancellation
 
-        System.out.println("\n--- Booking History ---");
-        for (Reservation r : bookingHistory) {
-            System.out.println(r);
-        }
-
-        persistence.saveState(new SystemState(inventory, bookingHistory));
+        history.printHistory();
+        service.printInventory();
     }
 }
