@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.*;
 
 public class app {
@@ -7,10 +8,9 @@ public class app {
             private String guestName;
             private String roomType;
 
-        public Reservation(String guestName, String roomType) {
-            this.guestName = guestName;
-            this.roomType = roomType;
-        }
+            public String getRoomType() {
+                return roomType;
+            }
 
             public String getReservationId() {
                 return reservationId;
@@ -101,7 +101,6 @@ public class app {
                 System.out.println("-------------------------");
             }
         }
-    }
 
         BookingHistory history = new BookingHistory();
         CancellationService service = new CancellationService(history);
