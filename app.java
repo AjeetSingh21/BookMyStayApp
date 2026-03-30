@@ -7,11 +7,10 @@ public class app {
             private String guestName;
             private String roomType;
 
-            public Reservation(String reservationId, String guestName, String roomType) {
-                this.reservationId = reservationId;
-                this.guestName = guestName;
-                this.roomType = roomType;
-            }
+        public Reservation(String guestName, String roomType) {
+            this.guestName = guestName;
+            this.roomType = roomType;
+        }
 
             public String getReservationId() {
                 return reservationId;
@@ -26,6 +25,8 @@ public class app {
                 return "Reservation{id=" + reservationId + ", guest=" + guestName + ", roomType=" + roomType + "}";
             }
         }
+        public synchronized void bookRoom(Reservation reservation) {
+            String type = reservation.getRoomType();
 
         class BookingHistory {
             private Map<String, Reservation> confirmedBookings = new HashMap<>();
@@ -63,6 +64,7 @@ public class app {
                 inventory.put("Suite", 1);
                 inventory.put("Standard", 3);
             }
+        }
 
             public void confirmReservation(Reservation reservation) {
                 String roomType = reservation.getRoomType();
@@ -88,6 +90,8 @@ public class app {
                 System.out.println("Cancelled reservation: " + reservation);
                 System.out.println("Inventory rolled back for room type: " + roomType);
             }
+            return total - inventory.get(type);
+        }
 
             public void printInventory() {
                 System.out.println("\n--- Current Inventory ---");
@@ -97,6 +101,7 @@ public class app {
                 System.out.println("-------------------------");
             }
         }
+    }
 
         BookingHistory history = new BookingHistory();
         CancellationService service = new CancellationService(history);
