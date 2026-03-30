@@ -26,7 +26,7 @@ public class app {
                 return "Reservation{id=" + reservationId + ", guest=" + guestName + ", roomType=" + roomType + "}";
             }
         }
-
+gi
         class BookingHistory {
             private Map<String, Reservation> confirmedBookings = new HashMap<>();
 
