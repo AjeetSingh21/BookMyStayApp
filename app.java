@@ -23,63 +23,40 @@ public class app {
             }
         }
 
-        class Service {
-            private String name;
-            private double cost;
+        class BookingHistory {
+            private List<Reservation> history = new ArrayList<>();
 
-            public Service(String name, double cost) {
-                this.name = name;
-                this.cost = cost;
+            public void addConfirmedReservation(Reservation reservation) {
+                history.add(reservation);
+                System.out.println("Confirmed reservation added to history: " + reservation);
             }
 
-            public double getCost() {
-                return cost;
-            }
-
-            @Override
-            public String toString() {
-                return name + " (₹" + cost + ")";
+            public List<Reservation> getHistory() {
+                return history;
             }
         }
 
-        class AddOnServiceManager {
-            private Map<String, List<Service>> serviceMap = new HashMap<>();
-
-            public void addServiceToReservation(String reservationId, Service service) {
-                serviceMap.computeIfAbsent(reservationId, k -> new ArrayList<>()).add(service);
-                System.out.println("Added service " + service + " to reservation " + reservationId);
-            }
-
-            public List<Service> getServicesForReservation(String reservationId) {
-                return serviceMap.getOrDefault(reservationId, Collections.emptyList());
-            }
-
-            public double calculateTotalCost(String reservationId) {
-                return getServicesForReservation(reservationId).stream()
-                        .mapToDouble(Service::getCost)
-                        .sum();
+        class BookingReportService {
+            public void generateReport(List<Reservation> reservations) {
+                System.out.println("\n--- Booking Report ---");
+                System.out.println("Total Confirmed Bookings: " + reservations.size());
+                for (Reservation r : reservations) {
+                    System.out.println(r);
+                }
+                System.out.println("----------------------");
             }
         }
 
         Reservation r1 = new Reservation("R001", "Alice", "Deluxe");
         Reservation r2 = new Reservation("R002", "Bob", "Suite");
+        Reservation r3 = new Reservation("R003", "Charlie", "Standard");
 
-        Service breakfast = new Service("Breakfast", 500);
-        Service spa = new Service("Spa", 1500);
-        Service airportPickup = new Service("Airport Pickup", 1000);
+        BookingHistory history = new BookingHistory();
+        history.addConfirmedReservation(r1);
+        history.addConfirmedReservation(r2);
+        history.addConfirmedReservation(r3);
 
-        AddOnServiceManager manager = new AddOnServiceManager();
-        manager.addServiceToReservation(r1.getReservationId(), breakfast);
-        manager.addServiceToReservation(r1.getReservationId(), spa);
-        manager.addServiceToReservation(r2.getReservationId(), airportPickup);
-
-        System.out.println("\nReservation Details:");
-        System.out.println(r1);
-        System.out.println("Services: " + manager.getServicesForReservation(r1.getReservationId()));
-        System.out.println("Total Add-On Cost: ₹" + manager.calculateTotalCost(r1.getReservationId()));
-
-        System.out.println(r2);
-        System.out.println("Services: " + manager.getServicesForReservation(r2.getReservationId()));
-        System.out.println("Total Add-On Cost: ₹" + manager.calculateTotalCost(r2.getReservationId()));
+        BookingReportService reportService = new BookingReportService();
+        reportService.generateReport(history.getHistory());
     }
 }
