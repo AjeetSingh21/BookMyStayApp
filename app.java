@@ -2,6 +2,12 @@ import java.util.*;
 
 public class app {
     public static void main(String[] args) {
+        class InvalidBookingException extends Exception {
+            public InvalidBookingException(String message) {
+                super(message);
+            }
+        }
+
         class Reservation {
             private String reservationId;
             private String guestName;
@@ -13,50 +19,68 @@ public class app {
                 this.roomType = roomType;
             }
 
-            public String getReservationId() {
-                return reservationId;
-            }
-
             @Override
             public String toString() {
                 return "Reservation{id=" + reservationId + ", guest=" + guestName + ", roomType=" + roomType + "}";
             }
         }
 
-        class BookingHistory {
-            private List<Reservation> history = new ArrayList<>();
+        class BookingValidator {
+            private Set<String> validRoomTypes = new HashSet<>(Arrays.asList("Deluxe", "Suite", "Standard"));
+            private Map<String, Integer> inventory = new HashMap<>();
 
-            public void addConfirmedReservation(Reservation reservation) {
-                history.add(reservation);
-                System.out.println("Confirmed reservation added to history: " + reservation);
+            public BookingValidator() {
+                inventory.put("Deluxe", 2);
+                inventory.put("Suite", 1);
+                inventory.put("Standard", 3);
             }
 
-            public List<Reservation> getHistory() {
-                return history;
-            }
-        }
-
-        class BookingReportService {
-            public void generateReport(List<Reservation> reservations) {
-                System.out.println("\n--- Booking Report ---");
-                System.out.println("Total Confirmed Bookings: " + reservations.size());
-                for (Reservation r : reservations) {
-                    System.out.println(r);
+            public void validateReservation(String roomType) throws InvalidBookingException {
+                if (!validRoomTypes.contains(roomType)) {
+                    throw new InvalidBookingException("Invalid room type: " + roomType);
                 }
-                System.out.println("----------------------");
+                if (inventory.get(roomType) == null || inventory.get(roomType) <= 0) {
+                    throw new InvalidBookingException("No rooms available for type: " + roomType);
+                }
+            }
+
+            public void confirmReservation(String roomType) {
+                inventory.put(roomType, inventory.get(roomType) - 1);
             }
         }
 
-        Reservation r1 = new Reservation("R001", "Alice", "Deluxe");
-        Reservation r2 = new Reservation("R002", "Bob", "Suite");
-        Reservation r3 = new Reservation("R003", "Charlie", "Standard");
+        BookingValidator validator = new BookingValidator();
 
-        BookingHistory history = new BookingHistory();
-        history.addConfirmedReservation(r1);
-        history.addConfirmedReservation(r2);
-        history.addConfirmedReservation(r3);
+        try {
+            validator.validateReservation("Deluxe");
+            Reservation r1 = new Reservation("R001", "Alice", "Deluxe");
+            validator.confirmReservation("Deluxe");
+            System.out.println("Confirmed: " + r1);
+        } catch (InvalidBookingException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
 
-        BookingReportService reportService = new BookingReportService();
-        reportService.generateReport(history.getHistory());
+        try {
+            validator.validateReservation("Penthouse");
+            Reservation r2 = new Reservation("R002", "Bob", "Penthouse");
+            validator.confirmReservation("Penthouse");
+            System.out.println("Confirmed: " + r2);
+        } catch (InvalidBookingException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
+        try {
+            validator.validateReservation("Suite");
+            Reservation r3 = new Reservation("R003", "Charlie", "Suite");
+            validator.confirmReservation("Suite");
+            System.out.println("Confirmed: " + r3);
+
+            validator.validateReservation("Suite");
+            Reservation r4 = new Reservation("R004", "David", "Suite");
+            validator.confirmReservation("Suite");
+            System.out.println("Confirmed: " + r4);
+        } catch (InvalidBookingException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 }
